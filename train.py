@@ -1,6 +1,8 @@
-from model import BigramLanguageModel
+from model import LanguageModel
 from hyperparameters import *
 import torch
+
+n_embd = 64
 
 with open('input.txt', 'r', encoding = 'utf-8') as f:
     text = f.read()
@@ -54,7 +56,11 @@ def estimate_loss():
 
     return out
 
-model = BigramLanguageModel(vocab_size)
+model = LanguageModel(
+    vocab_size = vocab_size,
+    n_embd = n_embd,
+    block_size = block_size
+    ).to(device)
 optimizer = torch.optim.AdamW(model.parameters(), lr = 1e-3)
 
 for iter in range(max_iters):
