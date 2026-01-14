@@ -9,6 +9,7 @@ class LanguageModel(nn.Module):
         self.token_embedding_table = nn.Embedding(vocab_size, n_embd)
         self.position_embedding_table = nn.Embedding(block_size, n_embd)
         self.lm_head = nn.Linear(n_embd, vocab_size)
+        self.block_size = block_size
 
     def forward(self, idx, targets = None):
         B, T = idx.shape
@@ -30,7 +31,7 @@ class LanguageModel(nn.Module):
 
     def generate(self, idx, max_new_tokens):
         for _ in range(max_new_tokens):
-            idx_cond = idx[:, -block_size:]
+            idx_cond = idx[:, -self.block_size:]
             logits, _ =  self(idx_cond)
             logits = logits[:, -1, :]
             probs = F.softmax(logits, dim = -1)
