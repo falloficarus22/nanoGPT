@@ -2,14 +2,14 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-class AttentionHead(nn.module):
+class AttentionHead(nn.Module):
     """Single attention head"""
 
     def __init__(self, n_embd, block_size):
-        super.__init__()
-        self.key = torch.Linear(n_embd, n_embd, bias = False)
-        self.query = torch.Linear(n_embd, n_embd, bias = False)
-        self.value = torch.Linear(n_embd, n_embd, bias = False)
+        super().__init__()
+        self.key = nn.Linear(n_embd, n_embd, bias = False)
+        self.query = nn.Linear(n_embd, n_embd, bias = False)
+        self.value = nn.Linear(n_embd, n_embd, bias = False)
 
         self.register_buffer(
             'tril', torch.tril(torch.ones(block_size, block_size))
@@ -38,7 +38,7 @@ class LanguageModel(nn.Module):
         self.position_embedding_table = nn.Embedding(block_size, n_embd)
         self.lm_head = nn.Linear(n_embd, vocab_size)
         self.block_size = block_size
-        self.attn_head = Head(n_embd, block_size)
+        self.attn_head = AttentionHead(n_embd, block_size)
 
     def forward(self, idx, targets = None):
         B, T = idx.shape
