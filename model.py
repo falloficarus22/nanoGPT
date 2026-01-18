@@ -5,11 +5,11 @@ import torch.nn.functional as F
 class AttentionHead(nn.Module):
     """Single attention head"""
 
-    def __init__(self, n_embd, block_size):
+    def __init__(self, head_size, n_embd, block_size):
         super().__init__()
-        self.key = nn.Linear(n_embd, n_embd, bias = False)
-        self.query = nn.Linear(n_embd, n_embd, bias = False)
-        self.value = nn.Linear(n_embd, n_embd, bias = False)
+        self.key = nn.Linear(n_embd, head_size, bias = False)
+        self.query = nn.Linear(n_embd, head_size, bias = False)
+        self.value = nn.Linear(n_embd, head_size, bias = False)
 
         self.register_buffer(
             'tril', torch.tril(torch.ones(block_size, block_size))
@@ -29,6 +29,22 @@ class AttentionHead(nn.Module):
 
         return out
 
+class MultiHeadAttention(nn.Module):
+    """Multiple heads of attention in parallel."""
+
+    def __init__(self, n_head, n_embd, block_size):
+        super().__init__()
+        head_size = n_embd // n_head
+        self.heads = nn.ModuleList([
+            AttentionHead(head_size, n_embd, block_size) for _ in range(n_head)
+        ])
+        self.proj = nn.Linear(n_embd, n_embd)
+
+    def forward(self, x):
+        out = torch.cat([h(x) for h in self.heads], dim = -1)
+        out = self.proj(out)
+
+        return out
 
 class LanguageModel(nn.Module):
 
@@ -38,14 +54,18 @@ class LanguageModel(nn.Module):
         self.position_embedding_table = nn.Embedding(block_size, n_embd)
         self.lm_head = nn.Linear(n_embd, vocab_size)
         self.block_size = block_size
-        self.attn_head = AttentionHead(n_embd, block_size)
+        self.attn = MultiHeadAttention(
+            n_head = 4,
+            n_embd = n_embd,
+            block_size = block_size
+        )
 
     def forward(self, idx, targets = None):
         B, T = idx.shape
         tok_embd = self.token_embedding_table(idx)
         pos_embd = self.position_embedding_table(torch.arange(T))
         x = tok_embd + pos_embd
-        x = self.attn_head(x)
+        x = self.attn(x)
         logits = self.lm_head(x)
 
         if targets is None:
