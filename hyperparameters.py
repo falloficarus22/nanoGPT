@@ -1,3 +1,5 @@
+n_layers = 4
+n_embd = 64
 batch_size = 32
 block_size = 64
 max_iters = 3000
